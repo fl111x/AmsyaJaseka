@@ -44,4 +44,8 @@ public interface OrderDao {
     // Delete completed orders before a certain timestamp
     @Query("DELETE FROM orders WHERE isCompleted = 1 AND completionDate < :timestamp")
     void deleteCompletedOrdersBefore(long timestamp);
+
+    // Get all orders (active and completed) for full backup
+    @Query("SELECT * FROM orders ORDER BY date DESC")
+    List<Order> getAllOrdersSync();
 }

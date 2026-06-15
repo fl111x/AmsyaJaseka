@@ -29,7 +29,7 @@
             android:text="Laporan_Laundry_Mei_2026.csv"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#212121" />
+             />
 
         <TextView
             android:id="@+id/tvReportPath"
@@ -38,7 +38,7 @@
             android:text="Documents/LaporanLaundry"
             android:textSize="12sp"
             android:layout_marginTop="4dp"
-            android:textColor="#757575" />
+             />
     </LinearLayout>
 
 </LinearLayout>

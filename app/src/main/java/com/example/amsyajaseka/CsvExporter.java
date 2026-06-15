@@ -83,4 +83,69 @@ public class CsvExporter {
 
         return false;
     }
+
+    public static boolean exportAllOrdersBackupToCsv(Context context, List<Order> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return false;
+        }
+
+        SimpleDateFormat dateFormatForName = new SimpleDateFormat("dd_MM_yyyy_HHmm", new Locale("id", "ID"));
+        String fileName = "Backup_Semua_Pesanan_" + dateFormatForName.format(new Date()) + ".csv";
+
+        StringBuilder csvContent = new StringBuilder();
+        // Header
+        csvContent.append("ID,Nama,Alamat,Berat (Kg),Harga Per Kg,Total Harga,Tanggal Masuk,Tanggal Selesai,Status Pesanan\n");
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", new Locale("id", "ID"));
+
+        for (Order order : orders) {
+            double total = order.weight * order.pricePerKg;
+            String status = order.isCompleted ? "Selesai" : "Belum Selesai";
+            String tglSelesai = order.isCompleted ? dateFormat.format(new Date(order.completionDate)) : "-";
+            
+            csvContent.append(order.id).append(",");
+            csvContent.append("\"").append(order.name.replace("\"", "\"\"")).append("\",");
+            csvContent.append("\"").append(order.address.replace("\"", "\"\"")).append("\",");
+            csvContent.append(order.weight).append(",");
+            csvContent.append(order.pricePerKg).append(",");
+            csvContent.append(total).append(",");
+            csvContent.append(dateFormat.format(new Date(order.date))).append(",");
+            csvContent.append(tglSelesai).append(",");
+            csvContent.append("\"").append(status).append("\"\n");
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                values.put(MediaStore.MediaColumns.MIME_TYPE, "text/csv");
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/LaporanLaundry");
+
+                ContentResolver resolver = context.getContentResolver();
+                Uri uri = resolver.insert(MediaStore.Files.getContentUri("external"), values);
+
+                if (uri != null) {
+                    try (OutputStream out = resolver.openOutputStream(uri)) {
+                        out.write(csvContent.toString().getBytes());
+                    }
+                    return true;
+                }
+            } else {
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "LaporanLaundry");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                File file = new File(dir, fileName);
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    fos.write(csvContent.toString().getBytes());
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("CsvExporter", "Failed to export backup CSV", e);
+        }
+
+        return false;
+    }
 }

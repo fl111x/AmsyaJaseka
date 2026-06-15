@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
 
     private OrderAdapter adapter;
     private OrderDao orderDao;
-    private boolean isSortedByDate = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,10 +89,27 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        ImageButton btnSort = findViewById(R.id.btnSort);
-        btnSort.setOnClickListener(v -> {
-            isSortedByDate = !isSortedByDate;
-            loadOrders();
+        ImageButton btnExportAllCsv = findViewById(R.id.btnExportAllCsv);
+        btnExportAllCsv.setOnClickListener(v -> {
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                List<Order> allOrders = orderDao.getAllOrdersSync();
+                boolean success = CsvExporter.exportAllOrdersBackupToCsv(MainActivity.this, allOrders);
+                runOnUiThread(() -> {
+                    if (success) {
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Backup Berhasil")
+                                .setMessage("Semua pesanan (termasuk yang selesai) telah diekspor ke Documents/LaporanLaundry sebagai file backup CSV.")
+                                .setPositiveButton("OK", null)
+                                .show();
+                    } else {
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Backup Gagal")
+                                .setMessage("Gagal mengekspor data atau tidak ada pesanan.")
+                                .setPositiveButton("OK", null)
+                                .show();
+                    }
+                });
+            });
         });
 
         checkAndExportOldOrders();
@@ -135,15 +151,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadOrders() {
-        if (isSortedByDate) {
-            orderDao.getAllOrdersByDateDesc().observe(this, orders -> {
-                adapter.setOrders(orders);
-            });
-        } else {
-            orderDao.getAllOrdersByNameAsc().observe(this, orders -> {
-                adapter.setOrders(orders);
-            });
-        }
+        orderDao.getAllOrdersByDateDesc().observe(this, orders -> {
+            adapter.setOrders(orders);
+        });
     }
 
     private void searchOrders(String query) {
